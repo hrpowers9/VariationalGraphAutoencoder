@@ -142,7 +142,7 @@ def create_adj_mat(edge_index):
 
 x, edge_index, adj_mat, y = process_data('Enron')
 
-def loss_fun(x, decoded, adj_mat, s, mu, logvar, alpha = 0.5, train = True):
+def loss_fun(x, decoded, adj_mat, s, mu, logvar, alpha = 0.5, beta = 0.5,train = True):
     '''
     The loss function calculates the loss to be backpropogated in the model.  
     It combines MSE for the features and adjacency matrix along with KL divergence
@@ -154,6 +154,7 @@ def loss_fun(x, decoded, adj_mat, s, mu, logvar, alpha = 0.5, train = True):
     :param mu: the mean for the distribution created in the latent space
     :param logvar: the log of the variance for the distribution in the latent space
     :param alpha: a weight to control the percentage of structure loss (and feature loss)
+    :param beta: a weight to control the percentage of feature loss (and KL divergence)
     :param train: a boolean to communicate if the model is training or testing
 
     :return loss: a loss value for each node in the form of a tensor with shape (number of nodes)
@@ -161,7 +162,7 @@ def loss_fun(x, decoded, adj_mat, s, mu, logvar, alpha = 0.5, train = True):
     kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) #KL divergence
     feature_loss = torch.pow(x - decoded, 2) #MSE from oroginal and reconstructed features
     structure_loss = torch.pow(adj_mat - s, 2) #MSE from original adj matrix and reconstructed adj mat
-    attribute_loss = feature_loss + kl_loss #aggregated loss for node attributes 
+    attribute_loss = beta * feature_loss + (1 - beta) * kl_loss #aggregated loss for node attributes 
     structure_loss = torch.sqrt(torch.sum(structure_loss, 1)) #calculate adj matrix MSE by node
 
     if train == False:
